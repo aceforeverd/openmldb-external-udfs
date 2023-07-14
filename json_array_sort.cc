@@ -6,23 +6,25 @@
 #include <sstream>
 #include <string_view>
 
+extern "C"
 void json_array_sort(::openmldb::base::UDFContext *ctx,
                      ::openmldb::base::StringRef *json_array,
                      ::openmldb::base::StringRef *order,
                      ::openmldb::base::StringRef *column, int32_t n, bool desc,
-                     ::openmldb::base::StringRef *out, bool *is_null) {
+                     ::openmldb::base::StringRef *out) {
+  // empty string on error
+  out->size_ = 0;
+
   simdjson::ondemand::parser parser;
   simdjson::padded_string json = json_array->ToString();
   simdjson::ondemand::document doc;
   auto err = parser.iterate(json).get(doc);
   if (err) {
-    *is_null = true;
     return;
   }
   simdjson::ondemand::array arr;
   err = doc.get_array().get(arr);
   if (err) {
-    *is_null = true;
     return;
   }
 
@@ -77,7 +79,6 @@ void json_array_sort(::openmldb::base::UDFContext *ctx,
   memcpy(buf, str.data(), ssz);
   out->data_ = buf;
   out->size_ = ssz;
-  *is_null = false;
 }
 
 

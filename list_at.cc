@@ -1,14 +1,19 @@
 #include "base/mem_pool.h"
 #include "base/string_ref.h"
-#include "simdjson.h"
 #include "udf/openmldb_udf.h"
 
 #include <string_view>
 
+extern "C"
 void list_at(::openmldb::base::UDFContext *ctx,
-             ::openmldb::base::StringRef *list, int idx,
-             ::openmldb::base::StringRef *del, ::openmldb::base::StringRef *out,
-             bool *is_null) {
+             ::openmldb::base::StringRef *list, int32_t idx,
+             ::openmldb::base::StringRef *del, ::openmldb::base::StringRef *out) {
+  out->size_ = 0;
+  if (list == nullptr || del == nullptr || out == nullptr) {
+    return;
+  }
+
+
   std::string_view data(list->data_, list->size_);
   std::string_view deli(del->data_, del->size_);
 
@@ -31,14 +36,12 @@ void list_at(::openmldb::base::UDFContext *ctx,
   }
 
   if (i != static_cast<uint32_t>(idx) + 1) {
-    *is_null = true;
     return;
   }
 
   std::string_view o = data.substr(start_pos, pos - start_pos);
   char* buf = ctx->pool->Alloc(o.size());
   memcpy(buf, o.data(), o.size());
-  *is_null = false;
   out->data_ = buf;
   out->size_ = o.size();
 }
